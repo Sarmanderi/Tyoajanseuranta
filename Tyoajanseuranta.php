@@ -58,6 +58,31 @@
         }
     }
 
+    function poistaTyontekija($id)
+    {
+        $q = "DELETE FROM tyontekija WHERE Tyontekija_ID = '$id'";
+
+        $result = TeeHaku($q);
+
+        if (!$result)
+        {
+            echo "Poisto ei onnistunut!";
+        }
+    }
+
+    function poistaProjekti($id)
+    {
+        $q = "DELETE FROM projekti WHERE Projektin_ID = '$id'";
+
+        $result = TeeHaku($q);
+
+        if (!$result)
+        {
+            echo "Poisto ei onnistunut!";
+            echo "\n" . $q;
+        }
+    }
+
     function haeTyontekijat()
     {
         $q = "SELECT * FROM `tyontekija`";
@@ -75,6 +100,36 @@
         else
         {
             echo "Ei tuloksia!";
+        }
+    }
+
+    function lisaaUusiProjekti($nimi)
+    {
+        $q = "INSERT INTO `projekti` (Projektin_Nimi) VALUES ('$nimi')";
+        echo $q;
+        $result = TeeHaku($q);
+        if ($result)
+        {
+            echo "Onnistui";
+        }
+        else
+        {
+            echo "Ei onnistunut";
+        }
+    }
+
+    function lisaaUusiTyontekija($etunimi, $sukunimi, $sahkoposti)
+    {
+        $q = "INSERT INTO `tyontekija` (Etunimi, Sukunimi, Sahkoposti) VALUES ('$etunimi', '$sukunimi', '$sahkoposti')";
+        echo $q;
+        $result = TeeHaku($q);
+        if ($result)
+        {
+            echo "Onnistui";
+        }
+        else
+        {
+            echo "Ei onnistunut";
         }
     }
 
@@ -131,21 +186,47 @@
         }
     }
 
-    if (isset($_GET['poista']))
+    if (isset($_GET['poista']) && isset($_GET['tyyppi']))
     {
-        poistaTyoaika($_GET['poista']);
+        if ($_GET['tyyppi'] == "projekti")
+        {
+            poistaProjekti($_GET['poista']);
+        }
+        else if ($_GET['tyyppi'] == "tyontekija")
+        {
+            poistaTyontekija($_GET['poista']);
+        }
+        
+        exit();
     }
 
-    if (isset($_GET['lisaaUusi']))
+    
+
+    if (isset($_GET['lisaaUusiProjekti']) && isset($_GET['projektinNimi']))
+    {
+        lisaaUusiProjekti($_GET['projektinNimi']);
+        exit();
+    }
+
+    if (isset($_GET['lisaaUusiTyontekija']))
+    {
+        lisaaUusiTyontekija($_GET['etunimi'], $_GET['sukunimi'], $_GET['sahkoposti']);
+    }
+        
+
+    if (isset($_GET['lisaaUusiAika']))
     {
         $projekti_id = $_GET['projekti'];
         $tyontekija_id = $_GET['tyontekija'];
         $aloitusaika = $_GET['Aloitusaika'];
         $lopetusaika = $_GET['Lopetusaika'];
 
-        $aikaleima = date('Y-m-d H:i:s');
+        // $aikaleima = date('Y-m-d H:i:s');
+        
+        $a = date("Y-m-d H:i:s", strtotime($aloitusaika));
+        $l = date("Y-m-d H:i:s", strtotime($lopetusaika));
 
-        $q = "INSERT INTO tyoajanseuranta (Projekti_ID, Tyontekija_ID, Aloitusaika, Lopetusaika) VALUES ('$projekti_id', '$tyontekija_id', '$aikaleima', '$aikaleima')";
+        $q = "INSERT INTO tyoajanseuranta (Projekti_ID, Tyontekija_ID, Aloitusaika, Lopetusaika) VALUES ('$projekti_id', '$tyontekija_id', '$a', '$l')";
 
         echo $q;
         $result = TeeHaku($q);
@@ -176,16 +257,89 @@
 
 $(function()
 {
-    $('#lisaaNappi').click(function (e) { 
+    $('#lisaatyoaika').click(function (e) { 
         e.preventDefault();
-        $('#ikkuna').modal();
+        $('#tyoaika_ikkuna').modal();
     });
 
-    $('#tallennaNappi').click(function(e)
+    $('#tallennaTyoaikaNappi').click(function(e)
     {
         e.preventDefault();
         
-        var d = $('#lisaaFormi').serialize();
+        var d = $('#lisaaaikaFormi').serialize();
+        console.log(d);
+        $.ajax({
+            url: "Tyoajanseuranta.php",
+            data: d,
+            success: function(result)
+            {
+                // location.reload();
+                // console.log(result);
+            }
+        });
+
+        $('#tyoaika_ikkuna').modal('hide');
+    });
+
+    
+ 
+
+});
+
+
+$(function()
+{
+    $('#lisaaprojekti').click(function (e) { 
+        e.preventDefault();
+        $('#projekti_ikkuna').modal();
+    });
+
+
+
+    $('#tallennaProjektiNappi').click(function(e)
+    {
+        e.preventDefault();
+        
+        var d = $('#lisaaprojektiFormi').serialize();
+
+        console.log(d);
+        $.ajax({
+            url: "Tyoajanseuranta.php",
+            data: d,
+            success: function(result)
+            {
+                // location.reload();
+                console.log(result);
+            }
+        });
+
+        $('#projekti_ikkuna').modal('hide');
+    });
+
+    $('#poistaProjektiNappi').click(function(e)
+    {
+        var id = $('#poista_projekti').val();
+        if (id != 'Ei valintaa')
+        {
+            poista(id, "projekti");
+        }
+    });
+    
+ 
+
+});
+$(function()
+{
+    $('#lisaatekija').click(function (e) { 
+        e.preventDefault();
+        $('#tyontekija_ikkuna').modal();
+    });
+
+    $('#tallennaTyontekijaNappi').click(function(e)
+    {
+        e.preventDefault();
+        
+        var d = $('#lisaatyontekijaFormi').serialize();
 
         $.ajax({
             url: "Tyoajanseuranta.php",
@@ -197,25 +351,35 @@ $(function()
             }
         });
 
-        $('#ikkuna').modal('hide');
+        $('#tyontekija_ikkuna').modal('hide');
     });
 
-    
- 
+    $('#poistaTyontekijaNappi').click(function(e)
+    {
+        var id = $('#poista_tyontekija').val();
+        if (id != 'Ei valintaa')
+        {
+            poista(id, "tyontekija");
+        }
+    });
+
 
 });
-
-function poista(id)
+function poista(id, tyyppi)
 {
+    console.log(id);
+    console.log(tyyppi);
+
     $.ajax({
             url: "Tyoajanseuranta.php",
             data: {
-                poista : id
+                poista : id,
+                tyyppi : tyyppi
             },
             success: function(result)
             {
-                location.reload();
-                // console.log(result);
+                // location.reload();
+                console.log(result);
             }
         });
 }
@@ -251,14 +415,19 @@ function poista(id)
     ?>
     </select>
     </td></tr>
-    <tr><td><input type="submit" value="Hae"></td><td><button id="lisaaNappi">Lisää työaika</button></td>
-    <td><button id="lisaaNappi">Lisää projekti</button></td><td><button id="lisaaNappi">Lisää työntekijä</button></td></tr>
+    <tr><td style="padding:1em"><input type="submit" value="Hae"></td><td style="padding:1em"><button id="lisaatyoaika">Lisää työaika</button></td>
+    <td style="padding:1em"><button id="lisaaprojekti">Lisää projekti</button></td><td style="padding:1em"><button id="lisaatekija">Lisää työntekijä</button></td></tr>
     </table>
     </form>
-
-    <table>
+    <style>
+    .tyoaikataulukko *
+    {
+        padding:0.3em;
+    }
+    </style>
+    <table class="tyoaikataulukko">
     <form method="post" action="Tyoajanseuranta.php">
-    <tr><th>Työaika</th><th> Projekti </th><th> Tyontekija </th><th> Aloitusaika </th><th> Lopetusaika </th></tr>
+    <tr><th style="padding:0.5em">Työaika</th><th style="padding:0.5em"> Projekti </th><th style="padding:0.5em"> Tyontekija </th><th style="padding:0.5em"> Aloitusaika </th><th style="padding:0.5em"> Lopetusaika </th></tr>
 
     <?php
         // haeTyoaikaJaTulosta($_POST['projekti_id'], $_POST['tyontekija_id'], $_POST['aloitusaika'], $_POST['lopetusaika']);
@@ -271,19 +440,98 @@ function poista(id)
     </form>
     </table>
 
-    
-    <div id="ikkuna" class="modal fade" role="dialog">
-    <div class="modal-dialog">
+    <!-- Projektin lisäys -->
+    <div id="projekti_ikkuna" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Lisää Projekti</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <form action="Tyoajanseuranta.php" method="post" name="lisaaprojektiFormi" id="lisaaprojektiFormi">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="Projekti_id">Projekti</label>
+                        <select name="poista_projekti" id="poista_projekti">
+                        <option id="">Ei valintaa</option>
+                        <?php
+                            haeProjektit();
+                        ?>
+                        </select>
+                        <button type="button" id="poistaProjektiNappi" class="btn btn-default">Poista</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="Projektin_nimi">Projektin nimi</label>
+                        <input type="hidden" name="lisaaUusiProjekti" value="1">
+                        <input type='text' name="projektinNimi" class="form-control" />
+                    </div>
+                </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Sulje</button>
+                    <button type="submit" id="tallennaProjektiNappi" class="btn btn-primary">Tallenna</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Modal content-->
+    <!-- Työntekijän lisäys -->
+
+    <div id="tyontekija_ikkuna" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Lisää Projekti</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <form action="Tyoajanseuranta.php" method="post" name="lisaatyontekijaFormi" id="lisaatyontekijaFormi">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="Tyontekija_id">Työntekijä</label>
+                        <select name="poista_tyontekija" id="poista_tyontekija">
+                            <option id="">Ei valintaa</option>
+                            <?php
+                                haeTyontekijat();
+                                // haeTyoaikaJaTulosta(1);
+                            ?>
+                        </select>
+                        <button type="button" id="poistaTyontekijaNappi" class="btn btn-default">Poista</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="Tyontekijan_nimi">Etunimi</label>
+                        <input type="hidden" name="lisaaUusiTyontekija" value="1">
+                        <input type='text' name="etunimi" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Tyontekijan_nimi">Sukunimi</label>
+                        <input type='text' name="sukunimi" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Tyontekijan_nimi">Sähköposti</label>
+                        <input type='text' name="sahkoposti" class="form-control" />
+                    </div>
+                </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Sulje</button>
+                    <button type="submit" id="tallennaTyontekijaNappi" class="btn btn-primary">Tallenna</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Työajan lisäys -->
+
+    <div id="tyoaika_ikkuna" class="modal fade" role="dialog">
+    <div class="modal-dialog">
     <div class="modal-content">
     <div class="modal-header">
         <h4 class="modal-title">Lisää työaika</h4>
         <button type="button" class="close" data-dismiss="modal">&times;</button>
     </div>
-    <form action="Tyoajanseuranta.php" method="post" name="lisaaFormi" id="lisaaFormi">
+    <form action="Tyoajanseuranta.php" method="post" name="lisaaaikaFormi" id="lisaaaikaFormi">
     <div class="modal-body">
-            <input type="hidden" name="lisaaUusi" value="1">
+            <input type="hidden" name="lisaaUusiAika" value="1">
             <div class="form-group">
                 <label for="Projekti_id">Projekti</label>
                 <select name="projekti">
@@ -305,48 +553,48 @@ function poista(id)
             </div>
             <label for="Aloitusaika">Aloitusaika</label>
             <div class="container">
-    <div class="row">
-        <div class='col-sm-6'>
-            <div class="form-group">
-                <div class='input-group date' id='datetimepicker1'>
-                    <input type='text' class="form-control" />
-                    <span class="input-group-addon">
-                        <span class="glyphicon glyphicon-calendar"></span>
-                    </span>
+        <div class="row">
+            <div class='col-sm-6'>
+                <div class="form-group">
+                    <div class='input-group date' id='datetimepicker1'>
+                        <input type='text' name="Aloitusaika" class="form-control" />
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-        <script type="text/javascript">
-            $(function () {
-                $('#datetimepicker2').datetimepicker({
-                    locale: 'fi'
+            <script type="text/javascript">
+                $(function () {
+                    $('#datetimepicker2').datetimepicker({
+                        locale: 'fi'
+                    });
                 });
-            });
-        </script>
+            </script>
+        </div>
     </div>
-</div>
-<label for="Lopetusaika">Lopetusaika</label>
-            <div class="container">
-    <div class="row">
-        <div class='col-sm-6'>
-            <div class="form-group">
-                <div class='input-group date' id='datetimepicker2'>
-                    <input type='text' class="form-control" />
-                    <span class="input-group-addon">
-                        <span class="glyphicon glyphicon-calendar"></span>
-                    </span>
+    <label for="Lopetusaika">Lopetusaika</label>
+                <div class="container">
+        <div class="row">
+            <div class='col-sm-6'>
+                <div class="form-group">
+                    <div class='input-group date' id='datetimepicker2'>
+                        <input type='text' name="Lopetusaika" class="form-control" />
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-        <script type="text/javascript">
-            $(function () {
-                $('#datetimepicker2').datetimepicker({
-                    locale: 'fi'
+            <script type="text/javascript">
+                $(function () {
+                    $('#datetimepicker2').datetimepicker({
+                        locale: 'fi'
+                    });
                 });
-            });
-        </script>
+            </script>
+        </div>
     </div>
-</div>
     <script type="text/javascript">
     $(function () {
         $('#datetimepicker1').datetimepicker();
@@ -355,11 +603,10 @@ function poista(id)
         });
     });
         </script>
-    </div>
-</div>>
+   
     <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Sulje</button>
-        <button type="submit" id="tallennaNappi" class="btn btn-primary">Tallenna</button>
+        <button type="submit" id="tallennaTyoaikaNappi" class="btn btn-primary">Tallenna</button>
     </div>
     </form>
     </div>
