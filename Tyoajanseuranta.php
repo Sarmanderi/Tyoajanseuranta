@@ -231,8 +231,6 @@ function poista(id)
 <body>
     <form action="Tyoajanseuranta.php" method="post">
     <table>
-    <tr><td>Nimi</td><td><input type="text" name="nimi"></td></tr>
-    <tr><td>Osoite</td><td><input type="text" name="osoite"></td></tr>
     <tr><td>Työntekijä</td>
     <td>
     <select name="tyontekija">
@@ -253,13 +251,14 @@ function poista(id)
     ?>
     </select>
     </td></tr>
-    <tr><td><input type="submit" value="Hae"></td><td><button id="lisaaNappi">Lisää asiakas</button></td></tr>
+    <tr><td><input type="submit" value="Hae"></td><td><button id="lisaaNappi">Lisää työaika</button></td>
+    <td><button id="lisaaNappi">Lisää projekti</button></td><td><button id="lisaaNappi">Lisää työntekijä</button></td></tr>
     </table>
     </form>
 
     <table>
     <form method="post" action="Tyoajanseuranta.php">
-    <tr><th>Työaika_ID</th><th>Projekti_id</th><th>Tyontekija_id</th><th>Aloitusaika</th><th>Lopetusaika</th></tr>
+    <tr><th>Työaika</th><th> Projekti </th><th> Tyontekija </th><th> Aloitusaika </th><th> Lopetusaika </th></tr>
 
     <?php
         // haeTyoaikaJaTulosta($_POST['projekti_id'], $_POST['tyontekija_id'], $_POST['aloitusaika'], $_POST['lopetusaika']);
@@ -286,52 +285,78 @@ function poista(id)
     <div class="modal-body">
             <input type="hidden" name="lisaaUusi" value="1">
             <div class="form-group">
-                <label for="Projekti_id">Projekti_id</label>
+                <label for="Projekti_id">Projekti</label>
                 <select name="projekti">
                 <option id="">Ei valintaa</option>
                 <?php
                     haeProjektit();
-                    // haeTyontekijat();
                 ?>
                 </select>
                 
             </div>
             <div class="form-group">
-                <label for="Tyontekija_id">Tyontekija_id</label>
+                <label for="Tyontekija_id">Tyontekija</label>
                 <select name="tyontekija">
                 <option id="">Ei valintaa</option>
                 <?php
                     haeTyontekijat();
-                    // haeTyoaikaJaTulosta(1);
                 ?>
                 </select>
             </div>
+            <label for="Aloitusaika">Aloitusaika</label>
+            <div class="container">
+    <div class="row">
+        <div class='col-sm-6'>
             <div class="form-group">
-                        <div class="input-append date form_datetime">
-                <input size="16" type="text" value="" readonly data-date-format="DD-MM-YYYY HH:mm:ss">
-                <span class="add-on"><i class="icon-th"></i></span>
+                <div class='input-group date' id='datetimepicker1'>
+                    <input type='text' class="form-control" />
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
             </div>
-            
-            <script type="text/javascript">
-                $(".form_datetime").datetimepicker({
-                    autoclose: true,
-                    todayBtn: true,
-                    pickerPosition: "bottom-left"
+        </div>
+        <script type="text/javascript">
+            $(function () {
+                $('#datetimepicker2').datetimepicker({
+                    locale: 'fi'
                 });
-            </script>  
-                                    
-            </div>
-            <div class="form-group">
-                <label for="Lopetusaika">Lopetusaika</label>
-                <input type="text" class="form-control" name="Lopetusaika" placeholder="Syötä Lopetusaika">
-                <?php
-                    // haeTyoaikaJaTulosta();
-                ?>
-                </select>
-            </div>
-        
-        
+            });
+        </script>
     </div>
+</div>
+<label for="Lopetusaika">Lopetusaika</label>
+            <div class="container">
+    <div class="row">
+        <div class='col-sm-6'>
+            <div class="form-group">
+                <div class='input-group date' id='datetimepicker2'>
+                    <input type='text' class="form-control" />
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            $(function () {
+                $('#datetimepicker2').datetimepicker({
+                    locale: 'fi'
+                });
+            });
+        </script>
+    </div>
+</div>
+    <script type="text/javascript">
+    $(function () {
+        $('#datetimepicker1').datetimepicker();
+        $('#datetimepicker2').datetimepicker({
+            useCurrent: false //Important! See issue #1075
+        });
+    });
+        </script>
+    </div>
+</div>>
     <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Sulje</button>
         <button type="submit" id="tallennaNappi" class="btn btn-primary">Tallenna</button>
