@@ -27,37 +27,8 @@
         return null;
     }
 
-    function haeTyoaika()
-    {
-        $q = "SELECT * FROM tyoajanseuranta";
-
-        $result = TeeHaku($q);
-
-        if ($result)
-        {
-            while($rivi = $result->fetch_assoc())
-            {
-                echo "<option id='". $rivi["AVAIN"] ."' value='" . $rivi["AVAIN"] ."'>".$rivi["SELITE"]."</option>\n";
-            }
-        }
-        else
-        {
-            echo "Ei tuloksia!";
-        }
-    }
-
-    function poistaTyoaika($id)
-    {
-        $q = "DELETE FROM tyoajanseuranta WHERE AVAIN = '$id'";
-
-        $result = TeeHaku($q);
-
-        if (!$result)
-        {
-            echo "Poisto ei onnistunut!";
-        }
-    }
-
+    
+    
     function poistaTyontekija($id)
     {
         $q = "DELETE FROM tyontekija WHERE Tyontekija_ID = '$id'";
@@ -81,6 +52,20 @@
             echo "Poisto ei onnistunut!";
             echo "\n" . $q;
         }
+    }
+
+    function poistaTyoaika($id)
+    {
+        $q = "DELETE FROM tyoajanseuranta WHERE Tyoaika_ID = '$id'";
+
+        $result = TeeHaku($q);
+
+        if (!$result)
+        {
+            echo "Poisto ei onnistunut!";
+            echo "\n" . $q;
+        }
+
     }
 
     function haeTyontekijat()
@@ -153,7 +138,28 @@
         }
     }
 
-    function haeTyoaikaJaTulosta($tyontekija_id, $projekti_id)
+    function haeTyoaika($id)
+    {
+        $q = "SELECT * FROM `tyoajanseuranta` WHERE Tyoaika_ID = $id";
+
+        $result = TeeHaku($q);
+
+        if ($result)
+        {
+            $d = array();
+            while($rivi = $result->fetch_assoc())
+            {
+                array_push($d, $rivi);
+            }
+            echo json_encode($d);
+        }
+        else
+        {
+            echo "Ei tuloksia!";
+        }
+    }
+
+    function haeTyoajatJaTulosta($tyontekija_id, $projekti_id)
     {
         $q = "SELECT * FROM `tyoajanseuranta` WHERE 1=1";
         if (isset($tyontekija_id) && $tyontekija_id != "Ei valintaa")
@@ -169,21 +175,29 @@
 
         if ($result)
         {
+            $d = array();
             while($rivi = $result->fetch_assoc())
             {
-                echo "<tr>
-                <td>". $rivi["Tyoaika_ID"] . "</td>
-                <td>" . $rivi["Projekti_ID"] . "</td>
-                <td>" . $rivi["Tyontekija_ID"] . "</td>
-                <td>" . $rivi["Aloitusaika"] . "</td>
-                <td>" . $rivi["Lopetusaika"] . "</td>
-                </tr>";
+                array_push($d, $rivi);
             }
+            echo json_encode($d);
         }
         else
         {
             echo "Ei tuloksia!";
         }
+    }
+
+    if (isset($_GET['haetyoaika']))
+    {
+        haeTyoaika($_GET['haetyoaika']);
+        exit();
+    }
+
+    if (isset($_GET['tyontekija']) && isset($_GET['projekti']) && !isset($_GET['lisaaUusiAika']))
+    {
+        haeTyoajatJaTulosta($_GET['tyontekija'], $_GET['projekti']);
+        exit();
     }
 
     if (isset($_GET['poista']) && isset($_GET['tyyppi']))
@@ -195,6 +209,10 @@
         else if ($_GET['tyyppi'] == "tyontekija")
         {
             poistaTyontekija($_GET['poista']);
+        }
+        else if ($_GET['tyyppi'] == "tyoaika")
+        {
+            poistaTyoaika($_GET['poista']);
         }
         
         exit();
@@ -216,29 +234,61 @@
 
     if (isset($_GET['lisaaUusiAika']))
     {
-        $projekti_id = $_GET['projekti'];
-        $tyontekija_id = $_GET['tyontekija'];
-        $aloitusaika = $_GET['Aloitusaika'];
-        $lopetusaika = $_GET['Lopetusaika'];
-
-        // $aikaleima = date('Y-m-d H:i:s');
-        
-        $a = date("Y-m-d H:i:s", strtotime($aloitusaika));
-        $l = date("Y-m-d H:i:s", strtotime($lopetusaika));
-
-        $q = "INSERT INTO tyoajanseuranta (Projekti_ID, Tyontekija_ID, Aloitusaika, Lopetusaika) VALUES ('$projekti_id', '$tyontekija_id', '$a', '$l')";
-
-        echo $q;
-        $result = TeeHaku($q);
-
-        if (!$result)
+        if ($_GET['lisaaUusiAika'] == "uusi")
         {
-            echo "Ei onnistunut!";
+            $projekti_id = $_GET['projekti'];
+            $tyontekija_id = $_GET['tyontekija'];
+            $aloitusaika = $_GET['Aloitusaika'];
+            $lopetusaika = $_GET['Lopetusaika'];
+    
+            // $aikaleima = date('Y-m-d H:i:s');
+            
+            $a = date("Y-m-d H:i:s", strtotime($aloitusaika));
+            $l = date("Y-m-d H:i:s", strtotime($lopetusaika));
+    
+            $q = "INSERT INTO tyoajanseuranta (Projekti_ID, Tyontekija_ID, Aloitusaika, Lopetusaika) VALUES ('$projekti_id', '$tyontekija_id', '$a', '$l')";
+    
+            echo $q;
+            $result = TeeHaku($q);
+    
+            if (!$result)
+            {
+                echo "Ei onnistunut!";
+            }
+            else
+                echo "Lisätty";
+    
+            exit();
         }
-        else
-            echo "Lisätty";
 
-        exit();
+        else if ($_GET['lisaaUusiAika'] == "muokkaa" && $_GET['tyoaikaid'])
+        {
+            $tyoaika_id = $_GET['tyoaikaid'];
+            $projekti_id = $_GET['projekti'];
+            $tyontekija_id = $_GET['tyontekija'];
+            $aloitusaika = $_GET['Aloitusaika'];
+            $lopetusaika = $_GET['Lopetusaika'];
+    
+            // $aikaleima = date('Y-m-d H:i:s');
+            
+            $a = date("Y-m-d H:i:s", strtotime($aloitusaika));
+            $l = date("Y-m-d H:i:s", strtotime($lopetusaika));
+    
+            $q = "UPDATE tyoajanseuranta SET Projekti_ID = $projekti_id, Tyontekija_ID = $tyontekija_id, Aloitusaika = '$a', Lopetusaika = '$l' WHERE Tyoaika_ID = $tyoaika_id";
+    
+            echo $q;
+            $result = TeeHaku($q);
+    
+            if (!$result)
+            {
+                echo "Ei onnistunut!";
+            }
+            else
+                echo "Päivitetty";
+    
+            exit();
+        }
+        
 
     }
 ?>
@@ -255,10 +305,113 @@
 
 <script>
 
+function haeTyoajat()
+    {
+        var d = $('#tyoaikahakuform').serialize();
+        // console.log(d);
+
+        $.ajax({
+            url: "Tyoajanseuranta.php",
+            data: d,
+            success: function(result)
+            {
+                $('.tyoaikataulukko').empty();
+                // location.reload();
+                var tyoajat = JSON.parse(result);
+                // console.log(tyoajat);
+                var headerit = '<tr><th style="padding:0.5em">Työaika</th><th style="padding:0.5em"> Projekti </th><th style="padding:0.5em"> Tyontekija </th><th style="padding:0.5em"> Aloitusaika </th><th style="padding:0.5em"> Lopetusaika </th></tr>';
+                $('.tyoaikataulukko').append(headerit);
+
+                for (var i = 0; i < tyoajat.length; i++)
+                {
+                    var rivi = $("<tr></tr>");
+                    var tyoaikaID = $("<td></td>").text(tyoajat[i].Tyoaika_ID);
+                    var projektiID = $("<td></td>").text(tyoajat[i].Projekti_ID);
+                    var tyontekijaID = $("<td></td>").text(tyoajat[i].Tyontekija_ID);
+                    var aloitusaika = $("<td></td>").text(tyoajat[i].Aloitusaika);
+                    var lopetusaika = $("<td></td>").text(tyoajat[i].Lopetusaika);
+                    var poistaNappi = "<button onclick='poista(" + tyoajat[i].Tyoaika_ID + ", \"tyoaika\")'>Poista</button>";
+                    var muokkaaNappi = "<button onclick='muokkaaTyoaika(" + tyoajat[i].Tyoaika_ID + ")'>Muokkaa</button>";
+                    
+                    $('.tyoaikataulukko').append(rivi);
+                    rivi.append(tyoaikaID);
+                    rivi.append(projektiID);
+                    rivi.append(tyontekijaID);
+                    rivi.append(aloitusaika);
+                    rivi.append(lopetusaika);
+                    var poistaSarake = $('<td></td>').append(poistaNappi);
+                    var muokkaaSarake = $('<td></td>').append(muokkaaNappi);
+                    rivi.append(poistaSarake);
+                    rivi.append(muokkaaSarake);
+                }
+            }
+        });
+    }
+
+    function muokkaaTyoaika(id)
+    {
+        $.ajax({
+            url: "Tyoajanseuranta.php",
+            data: {
+                haetyoaika : id
+            },
+            success: function(result)
+            {
+                // location.reload();
+                console.log(result);
+                var d = JSON.parse(result);
+                console.log(d[0].Aloitusaika);
+                console.log(d[0].Lopetusaika);
+                $('#aloitusaika').val(d[0].Aloitusaika);
+                $('#lopetusaika').val(d[0].Lopetusaika);
+                $('#tyontekijavalinta option[value=' + d[0].Tyontekija_ID + ']').attr('selected', 'selected');
+                $('#projektivalinta option[value=' + d[0].Projekti_ID + ']').attr('selected', 'selected');
+                $('#lisaaUusiAika').val("muokkaa");
+                $('#tyoaikaid').val(id);
+                $('#tyoaika_ikkuna').modal();
+                haeTyoajat();
+            }
+        });
+
+        // $('#tyoaika_ikkuna').modal();
+    }
+
+    function poista(id, tyyppi)
+    {
+        console.log(id);
+        console.log(tyyppi);
+
+        $.ajax({
+                url: "Tyoajanseuranta.php",
+                data: {
+                    poista : id,
+                    tyyppi : tyyppi
+                },
+                success: function(result)
+                {
+                    // location.reload();
+                    console.log(result);
+                    haeTyoajat();
+                }
+            });
+    }
+
+
 $(function()
 {
+    $('#haetyoajat').click(function (e)
+    {
+        e.preventDefault();
+        haeTyoajat();
+        
+    })
+
     $('#lisaatyoaika').click(function (e) { 
         e.preventDefault();
+        $('#aloitusaika').val("");
+        $('#lopetusaika').val("");
+        $('#lisaaUusiAika').val("uusi");
+        $('#tyoaikaid').val('');
         $('#tyoaika_ikkuna').modal();
     });
 
@@ -274,21 +427,15 @@ $(function()
             success: function(result)
             {
                 // location.reload();
-                // console.log(result);
+                console.log(result);
+                haeTyoajat();
             }
         });
 
         $('#tyoaika_ikkuna').modal('hide');
+        
     });
 
-    
- 
-
-});
-
-
-$(function()
-{
     $('#lisaaprojekti').click(function (e) { 
         e.preventDefault();
         $('#projekti_ikkuna').modal();
@@ -308,7 +455,7 @@ $(function()
             data: d,
             success: function(result)
             {
-                // location.reload();
+                location.reload();
                 console.log(result);
             }
         });
@@ -327,9 +474,6 @@ $(function()
     
  
 
-});
-$(function()
-{
     $('#lisaatekija').click(function (e) { 
         e.preventDefault();
         $('#tyontekija_ikkuna').modal();
@@ -346,7 +490,7 @@ $(function()
             data: d,
             success: function(result)
             {
-                // location.reload();
+                location.reload();
                 console.log(result);
             }
         });
@@ -364,28 +508,9 @@ $(function()
     });
 
 
+
+    
 });
-function poista(id, tyyppi)
-{
-    console.log(id);
-    console.log(tyyppi);
-
-    $.ajax({
-            url: "Tyoajanseuranta.php",
-            data: {
-                poista : id,
-                tyyppi : tyyppi
-            },
-            success: function(result)
-            {
-                // location.reload();
-                console.log(result);
-            }
-        });
-}
-
-
-
 
     
 </script>
@@ -393,7 +518,7 @@ function poista(id, tyyppi)
 
 
 <body>
-    <form action="Tyoajanseuranta.php" method="post">
+    <form action="Tyoajanseuranta.php" method="get" id="tyoaikahakuform">
     <table>
     <tr><td>Työntekijä</td>
     <td>
@@ -401,7 +526,7 @@ function poista(id, tyyppi)
     <option id="">Ei valintaa</option>
     <?php
         haeTyontekijat();
-        // haeTyoaikaJaTulosta(1);
+        // haeTyoajatJaTulosta(1);
     ?>
     </select>
     </td></tr>
@@ -415,7 +540,7 @@ function poista(id, tyyppi)
     ?>
     </select>
     </td></tr>
-    <tr><td style="padding:1em"><input type="submit" value="Hae"></td><td style="padding:1em"><button id="lisaatyoaika">Lisää työaika</button></td>
+    <tr><td style="padding:1em"><button id="haetyoajat">Hae</button></td><td style="padding:1em"><button id="lisaatyoaika">Lisää työaika</button></td>
     <td style="padding:1em"><button id="lisaaprojekti">Lisää projekti</button></td><td style="padding:1em"><button id="lisaatekija">Lisää työntekijä</button></td></tr>
     </table>
     </form>
@@ -425,21 +550,12 @@ function poista(id, tyyppi)
         padding:0.3em;
     }
     </style>
+    
     <table class="tyoaikataulukko">
-    <form method="post" action="Tyoajanseuranta.php">
-    <tr><th style="padding:0.5em">Työaika</th><th style="padding:0.5em"> Projekti </th><th style="padding:0.5em"> Tyontekija </th><th style="padding:0.5em"> Aloitusaika </th><th style="padding:0.5em"> Lopetusaika </th></tr>
-
-    <?php
-        // haeTyoaikaJaTulosta($_POST['projekti_id'], $_POST['tyontekija_id'], $_POST['aloitusaika'], $_POST['lopetusaika']);
-        if (isset($_POST['tyontekija']) || isset($_POST['projekti']))
-        {
-            haeTyoaikaJaTulosta($_POST['tyontekija'], $_POST['projekti']);
-        }
-            
-    ?>
-    </form>
+    
     </table>
 
+    
     <!-- Projektin lisäys -->
     <div id="projekti_ikkuna" class="modal fade" role="dialog">
         <div class="modal-dialog">
@@ -492,7 +608,7 @@ function poista(id, tyyppi)
                             <option id="">Ei valintaa</option>
                             <?php
                                 haeTyontekijat();
-                                // haeTyoaikaJaTulosta(1);
+                                // haeTyoajatJaTulosta(1);
                             ?>
                         </select>
                         <button type="button" id="poistaTyontekijaNappi" class="btn btn-default">Poista</button>
@@ -531,10 +647,11 @@ function poista(id, tyyppi)
     </div>
     <form action="Tyoajanseuranta.php" method="post" name="lisaaaikaFormi" id="lisaaaikaFormi">
     <div class="modal-body">
-            <input type="hidden" name="lisaaUusiAika" value="1">
+            <input type="hidden" id="lisaaUusiAika" name="lisaaUusiAika" value="uusi">
+            <input type="hidden" id="tyoaikaid" name="tyoaikaid" value="">
             <div class="form-group">
                 <label for="Projekti_id">Projekti</label>
-                <select name="projekti">
+                <select id="projektivalinta" name="projekti">
                 <option id="">Ei valintaa</option>
                 <?php
                     haeProjektit();
@@ -544,7 +661,7 @@ function poista(id, tyyppi)
             </div>
             <div class="form-group">
                 <label for="Tyontekija_id">Tyontekija</label>
-                <select name="tyontekija">
+                <select id="tyontekijavalinta" name="tyontekija">
                 <option id="">Ei valintaa</option>
                 <?php
                     haeTyontekijat();
@@ -557,7 +674,7 @@ function poista(id, tyyppi)
             <div class='col-sm-6'>
                 <div class="form-group">
                     <div class='input-group date' id='datetimepicker1'>
-                        <input type='text' name="Aloitusaika" class="form-control" />
+                        <input type='text' name="Aloitusaika" id="aloitusaika" class="form-control" />
                         <span class="input-group-addon">
                             <span class="glyphicon glyphicon-calendar"></span>
                         </span>
@@ -579,7 +696,7 @@ function poista(id, tyyppi)
             <div class='col-sm-6'>
                 <div class="form-group">
                     <div class='input-group date' id='datetimepicker2'>
-                        <input type='text' name="Lopetusaika" class="form-control" />
+                        <input type='text' name="Lopetusaika" id="lopetusaika" class="form-control" />
                         <span class="input-group-addon">
                             <span class="glyphicon glyphicon-calendar"></span>
                         </span>
