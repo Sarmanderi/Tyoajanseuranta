@@ -68,6 +68,43 @@
 
     }
 
+    function muokkaaTyontekijaa($id, $etunimi, $sukunimi, $sahkoposti)
+    {
+        $q = "UPDATE tyontekija SET Etunimi = '$etunimi', Sukunimi = '$sukunimi', Sahkoposti = '$sahkoposti' WHERE Tyontekija_ID = $id";
+
+        $result = TeeHaku($q);
+
+        if ($result)
+        {
+
+        }
+        else
+        {
+            echo "Ei onnistu.";
+        }
+    }
+
+    function haeTyontekija($id)
+    {
+        $q = "SELECT * FROM `tyontekija` WHERE Tyontekija_ID = $id";
+
+        $result = TeeHaku($q);
+
+        if ($result)
+        {
+            $d = array();
+            while($rivi = $result->fetch_assoc())
+            {
+                array_push($d, $rivi);
+            }
+            echo json_encode($d);
+        }
+        else
+        {
+            echo "Ei tuloksia!";
+        }
+    }
+
     function haeTyontekijat()
     {
         $q = "SELECT * FROM `tyontekija`";
@@ -115,6 +152,43 @@
         else
         {
             echo "Ei onnistunut";
+        }
+    }
+
+    function muokkaaProjektia($id, $nimi)
+    {
+        $q = "UPDATE projekti SET Projektin_Nimi = '$nimi' WHERE Projektin_ID = $id";
+
+        $result = TeeHaku($q);
+
+        if ($result)
+        {
+
+        }
+        else
+        {
+            echo "Ei onnistu.";
+        }
+    }
+
+    function haeProjekti($id)
+    {
+        $q = "SELECT * FROM `projekti` WHERE Projektin_ID = $id";
+        
+        $result = TeeHaku($q);
+
+        if ($result)
+        {
+            $d = array();
+            while($rivi = $result->fetch_assoc())
+            {
+                array_push($d, $rivi);
+            }
+            echo json_encode($d);
+        }
+        else
+        {
+            echo "Ei tuloksia!";
         }
     }
 
@@ -222,13 +296,41 @@
 
     if (isset($_GET['lisaaUusiProjekti']) && isset($_GET['projektinNimi']))
     {
-        lisaaUusiProjekti($_GET['projektinNimi']);
+        if (isset($_GET['muokkaaprojektia']))
+        {
+            muokkaaProjektia($_GET['muokkaaprojektia'], $_GET['projektinNimi']);
+        }
+        else
+        {
+            lisaaUusiProjekti($_GET['projektinNimi']);    
+        }
         exit();
     }
 
     if (isset($_GET['lisaaUusiTyontekija']))
     {
-        lisaaUusiTyontekija($_GET['etunimi'], $_GET['sukunimi'], $_GET['sahkoposti']);
+        if (isset($_GET['muokkaatyontekijaa']))
+        {
+            muokkaaTyontekijaa($_GET['muokkaatyontekijaa'], $_GET['etunimi'], $_GET['sukunimi'], $_GET['sahkoposti']);
+        }
+        else
+        {
+            lisaaUusiTyontekija($_GET['etunimi'], $_GET['sukunimi'], $_GET['sahkoposti']);
+        }
+        exit();
+        
+    }
+
+    if (isset($_GET['haetyontekija']))
+    {
+        haeTyontekija($_GET['haetyontekija']);
+        exit();
+    }
+
+    if (isset($_GET['haeprojekti']))
+    {
+        haeProjekti($_GET['haeprojekti']);
+        exit();
     }
         
 
@@ -288,8 +390,6 @@
     
             exit();
         }
-        
-
     }
 ?>
 <meta charset="utf-8">
@@ -438,6 +538,7 @@ $(function()
 
     $('#lisaaprojekti').click(function (e) { 
         e.preventDefault();
+        $('#muokkaaprojektia').remove();
         $('#projekti_ikkuna').modal();
     });
 
@@ -472,10 +573,10 @@ $(function()
         }
     });
     
- 
 
     $('#lisaatekija').click(function (e) { 
         e.preventDefault();
+        $('#muokkaatyontekijaa').remove();
         $('#tyontekija_ikkuna').modal();
     });
 
@@ -507,7 +608,66 @@ $(function()
         }
     });
 
+    $('#poista_tyontekija').change(function()
+    {
+        var valinta = $('#poista_tyontekija').val();
 
+        if (valinta != 'Ei valintaa')
+        {
+            $.ajax({
+            url: "Tyoajanseuranta.php",
+            data: {
+                haetyontekija : $('#poista_tyontekija').val()
+            },
+            success: function(result)
+            {
+                // location.reload();
+                var r = JSON.parse(result);
+                $('#muokkaatyontekijaa').remove();
+
+                var inp = "<input type='hidden' id='muokkaatyontekijaa' name='muokkaatyontekijaa' value=" + r[0].Tyontekija_ID + ">";
+                $('#lisaatyontekijaFormi').append(inp);
+                
+                $('#etunimi').val(r[0].Etunimi);
+                $('#sukunimi').val(r[0].Sukunimi);
+                $('#sahkoposti').val(r[0].Sahkoposti);
+                console.log(result);
+            }
+        });
+        }
+        
+    });
+
+
+    $('#poista_projekti').change(function()
+    {
+        var valinta = $('#poista_projekti').val();
+
+        if (valinta != 'Ei valintaa')
+        {
+            $.ajax({
+            url: "Tyoajanseuranta.php",
+            data: {
+                haeprojekti : $('#poista_projekti').val()
+            },
+            success: function(result)
+            {
+                // location.reload();
+                var r = JSON.parse(result);
+                $('#muokkaaprojektia').remove();
+
+                var inp = "<input type='hidden' id='muokkaaprojektia' name='muokkaaprojektia' value=" + r[0].Projektin_ID + ">";
+                $('#lisaaprojektiFormi').append(inp);
+                
+                $('#projektinNimi').val(r[0].Projektin_Nimi);
+                $('#sukunimi').val(r[0].Sukunimi);
+                $('#sahkoposti').val(r[0].Sahkoposti);
+                console.log(result);
+            }
+        });
+        }
+        
+    });
 
     
 });
@@ -565,6 +725,7 @@ $(function()
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <form action="Tyoajanseuranta.php" method="post" name="lisaaprojektiFormi" id="lisaaprojektiFormi">
+
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="Projekti_id">Projekti</label>
@@ -579,7 +740,7 @@ $(function()
                     <div class="form-group">
                         <label for="Projektin_nimi">Projektin nimi</label>
                         <input type="hidden" name="lisaaUusiProjekti" value="1">
-                        <input type='text' name="projektinNimi" class="form-control" />
+                        <input type='text' id="projektinNimi" name="projektinNimi" class="form-control" />
                     </div>
                 </div>
                 </form>
@@ -616,15 +777,15 @@ $(function()
                     <div class="form-group">
                         <label for="Tyontekijan_nimi">Etunimi</label>
                         <input type="hidden" name="lisaaUusiTyontekija" value="1">
-                        <input type='text' name="etunimi" class="form-control" />
+                        <input type='text' id="etunimi" name="etunimi" class="form-control" />
                     </div>
                     <div class="form-group">
                         <label for="Tyontekijan_nimi">Sukunimi</label>
-                        <input type='text' name="sukunimi" class="form-control" />
+                        <input type='text' id="sukunimi" name="sukunimi" class="form-control" />
                     </div>
                     <div class="form-group">
                         <label for="Tyontekijan_nimi">Sähköposti</label>
-                        <input type='text' name="sahkoposti" class="form-control" />
+                        <input type='text' id="sahkoposti" name="sahkoposti" class="form-control" />
                     </div>
                 </div>
                 </form>
